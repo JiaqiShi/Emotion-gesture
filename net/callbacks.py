@@ -1,12 +1,11 @@
 import torch
 import numpy as np
-from torch.utils.data import Dataset
 
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
 
-    def __init__(self, patience=10, verbose=False, delta=0, path='checkpoint.pt'):
+    def __init__(self, patience=10, verbose=False, delta=0, name='chkpt.pt'):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -23,7 +22,7 @@ class EarlyStopping:
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-        self.path = path
+        self.path = 'saved_model/' + name
 
     def __call__(self, val_loss, model):
 
@@ -50,20 +49,3 @@ class EarlyStopping:
                 f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
         torch.save(model.state_dict(), path)
         self.val_loss_min = val_loss
-
-
-class MyDataset(Dataset):
-    def __init__(self, X, y, transform=None):
-        self.X = torch.tensor(X, dtype=torch.float)
-        self.y = torch.tensor(y, dtype=torch.float)
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
-
-
-if __name__ == "__main__":
-
-    stopping = EarlyStopping()
