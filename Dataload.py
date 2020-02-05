@@ -21,7 +21,7 @@ class Dataloader():
             data_path = os.path.join(audio_feature_path, 'Session'+str(row['Session'])+'/'+row['dialog']+'/'+index+'.npy')
             with open(data_path,'rb') as f:
                 data = np.load(f)
-            audio_data.append(data)
+            audio_data.append(np.swapaxes(data,0 ,1))
         if padding:
             pass
         return audio_data
@@ -53,7 +53,7 @@ class Dataloader():
 #%%
 if __name__ == '__main__':
     csv_path = r'/home/shi/emo_dataset/iemocap_utils/set_frame.csv'
-    audio_feature_path = r'/home/shi/emo_dataset/Emo-gesture/Audio_features/MFCC12_0_D_A'
+    audio_feature_path = r'/home/shi/emo_dataset/Emo-gesture/Audio_features/MFCC_m1f3'
     motion_path = r'/home/shi/emo_dataset/iemocap_utils/3Dpoint_up_filted'
     dataload = Dataloader(csv_path,one_only=True)
 
