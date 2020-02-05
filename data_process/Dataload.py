@@ -62,7 +62,7 @@ class Dataloader():
 
 if __name__ == '__main__':
     csv_path = r'/home/shi/emo_dataset/iemocap_utils/set_frame.csv'
-    audio_feature_path = r'/home/shi/emo_dataset/Emo-gesture/Audio_features/MFCC_m1f3'
+    audio_feature_path = r'/home/shi/emo_dataset/Emo-gesture/Audio_features/MFCC_m1f1'
     motion_path = r'/home/shi/emo_dataset/iemocap_utils/3Dpoint_up_filted'
     dataload = Dataloader(csv_path, one_only=True)
 
