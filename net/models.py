@@ -5,11 +5,11 @@ from torch.utils.data import DataLoader
 import time
 import numpy as np
 
-from datasets import SimpleSet
-from callbacks import EarlyStopping
+# from datasets import SimpleSet
+# from callbacks import EarlyStopping
 
 
-class AUDIO_ONLY(nn.Module):
+class AudioOnly(nn.Module):
     def __init__(self,
                  *,
                  hidden_dim,
@@ -18,7 +18,7 @@ class AUDIO_ONLY(nn.Module):
                  num_stack=1,
                  return_sequences=False,
                  return_states=False):
-        super(AUDIO_ONLY, self).__init__()
+        super(AudioOnly, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -32,6 +32,9 @@ class AUDIO_ONLY(nn.Module):
             self.optimizer = optim.Adam(self.parameters(), lr=lr)
         if criterion == 'mse':
             self.criterion = nn.MSELoss()
+
+    def count_parameters(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def forward(self, x):
         assert len(
@@ -51,10 +54,13 @@ class AUDIO_ONLY(nn.Module):
     def _on_epoch_begin(self):
         self.start_time = time.time()
 
-    def _train_step(self, train_loader):
+    def _train_step(self, train_loader, device):
         self.train()
         losses = []
         for x_batch, y_true_batch in train_loader:
+            if device:
+                x_batch = x_batch.to(device)
+                y_true_batch = y_true_batch.to(device)
             self.optimizer.zero_grad()
             y_pred_batch = self.forward(x_batch)
             loss = self.criterion(y_pred_batch, y_true_batch)
@@ -63,10 +69,13 @@ class AUDIO_ONLY(nn.Module):
             losses.append(loss.item())
         self.train_loss = np.mean(losses)
 
-    def _valid_step(self, valid_loader):
+    def _valid_step(self, valid_loader, device):
         self.eval()
         losses = []
         for x_batch, y_true_batch in valid_loader:
+            if device:
+                x_batch = x_batch.to(device)
+                y_true_batch = y_true_batch.to(device)
             y_pred_batch = self.forward(x_batch)
             loss = self.criterion(y_pred_batch, y_true_batch)
             losses.append(loss.item())
@@ -75,33 +84,34 @@ class AUDIO_ONLY(nn.Module):
     def _on_epoch_end(self, epoch):
         self.hist['train_loss'].append(self.train_loss)
         self.hist['valid_loss'].append(self.valid_loss)
-
         template = "Epoch {0} {1}s: loss: {2:.5f} - val_loss: {3:.5f}"
         print(template.format(
             epoch,
             int(time.time() - self.start_time),
             self.train_loss,
             self.valid_loss))
-
         if self.stopping:
             self.stopping(self.valid_loss, self)
             if self.stopping.early_stop:
                 print("Earlystopping threshold")
                 self.stop = True
 
-    def fit(self, train_set, valid_set, *, epochs=1, batch_size=1, shuffle=True, stopping=None):
-
+    def fit(self,
+            train_set,
+            valid_set,
+            *,
+            epochs=1,
+            batch_size=1,
+            shuffle=True,
+            stopping=None):
         train_loader = DataLoader(
             train_set, batch_size=batch_size, shuffle=shuffle)
         valid_loader = DataLoader(
             valid_set, batch_size=batch_size, shuffle=shuffle)
-
         self.hist = {'train_loss': [], 'valid_loss': []}
         self.stopping = stopping
         self.stop = False
-
         print("Train on {} samples -- validate on {} samples".format(len(train_loader), len(valid_loader)))
-
         for epoch in range(1, epochs+1):
             self._on_epoch_begin()
             self._train_step(train_loader)
@@ -109,14 +119,35 @@ class AUDIO_ONLY(nn.Module):
             self._on_epoch_end(epoch)
             if self.stop:
                 break
+        return self.hist
 
+    def fit_generator(self,
+                      train_generator,
+                      valid_generator,
+                      *,
+                      epochs=1,
+                      stopping=None,
+                      device=None):
+        self.hist = {'train_loss': [], 'valid_loss': []}
+        self.stopping = stopping
+        self.stop = False
+        print("Train on {} batches -- validate on {} batches".format(
+            len(train_generator), len(valid_generator)))
+        for epoch in range(1, epochs+1):
+            self._on_epoch_begin()
+            self._train_step(train_generator, device)
+            self._valid_step(valid_generator, device)
+            print('end')
+            self._on_epoch_end(epoch)
+            if self.stop:
+                break
         return self.hist
 
 
 if __name__ == "__main__":
 
-    net = AUDIO_ONLY(hidden_dim=128, input_dim=30, output_dim=16,
-                     num_stack=2, return_sequences=True, return_states=False)
+    net = AudioOnly(hidden_dim=128, input_dim=30, output_dim=16,
+                    num_stack=2, return_sequences=True, return_states=False)
     print(net)
 
     net.compile(lr=1e-4, optimizer='adam', criterion='mse')
