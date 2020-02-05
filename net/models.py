@@ -1,13 +1,15 @@
 import torch
 import torch.nn as nn
 from torch import optim
-from torch.utils.data import DataLoader, Dataset
-from helpers import EarlyStopping, MyDataset
+from torch.utils.data import DataLoader
 import time
 import numpy as np
 
+from datasets import SimpleSet
+from callbacks import EarlyStopping
 
-class Net(nn.Module):
+
+class AUDIO_ONLY(nn.Module):
     def __init__(self,
                  *,
                  hidden_dim,
@@ -15,9 +17,8 @@ class Net(nn.Module):
                  output_dim,
                  num_stack=1,
                  return_sequences=False,
-                 return_states=False
-                 ):
-        super(Net, self).__init__()
+                 return_states=False):
+        super(AUDIO_ONLY, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -114,17 +115,17 @@ class Net(nn.Module):
 
 if __name__ == "__main__":
 
-    net = Net(hidden_dim=128, input_dim=30, output_dim=16,
-              num_stack=2, return_sequences=True, return_states=False)
+    net = AUDIO_ONLY(hidden_dim=128, input_dim=30, output_dim=16,
+                     num_stack=2, return_sequences=True, return_states=False)
     print(net)
 
     net.compile(lr=1e-4, optimizer='adam', criterion='mse')
 
-    stopping = EarlyStopping(verbose=1)
+    stopping = EarlyStopping(verbose=1, name='chkpt.pt')
 
     X = np.zeros((1, 300, 30))
     y = np.zeros((1, 300, 16))
 
-    train_set = MyDataset(X, y)
+    train_set = SimpleSet(X, y)
 
     net.fit(train_set, train_set, epochs=10, stopping=stopping)
