@@ -88,6 +88,14 @@ def split_save(audio, motion, emo, save_path, test_size=0.3):
         pickle.dump([audio_test, motion_test, emo_test], f)
 
 
+def shorten(X, Y):
+    """Remove time step exceeding shorter sequence"""
+    lens = [np.min([len(x), len(y)]) for x, y in zip(X, Y)]
+    X = [x[:l] for x, l in zip(X, lens)]
+    Y = [y[:l] for y, l in zip(Y, lens)]
+    return X, Y
+
+
 if __name__ == '__main__':
     csv_path = r'/home/shi/emo_dataset/iemocap_utils/set_frame.csv'
     audio_feature_path = r'/home/shi/emo_dataset/Emo-gesture/Audio_features/MFCC_m1f1'

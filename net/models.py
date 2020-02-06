@@ -11,10 +11,10 @@ import numpy as np
 
 class AudioOnly(nn.Module):
     def __init__(self,
-                 *,
                  hidden_dim,
                  input_dim,
                  output_dim,
+                 *,
                  num_stack=1,
                  return_sequences=False,
                  return_states=False):
@@ -27,7 +27,10 @@ class AudioOnly(nn.Module):
         self.gru = nn.GRU(input_dim, hidden_dim, num_layers=num_stack)
         self.fc = nn.Linear(hidden_dim, output_dim)
 
-    def compile(self, *, lr, optimizer, criterion):
+    def compile(self, *, lr, optimizer, criterion, device=None):
+        if device:
+            self.device = device
+            self.to(device)
         if optimizer == 'adam':
             self.optimizer = optim.Adam(self.parameters(), lr=lr)
         if criterion == 'mse':
@@ -54,13 +57,13 @@ class AudioOnly(nn.Module):
     def _on_epoch_begin(self):
         self.start_time = time.time()
 
-    def _train_step(self, train_loader, device):
+    def _train_step(self, train_loader):
         self.train()
         losses = []
         for x_batch, y_true_batch in train_loader:
-            if device:
-                x_batch = x_batch.to(device)
-                y_true_batch = y_true_batch.to(device)
+            if self.device:
+                x_batch = x_batch.to(self.device)
+                y_true_batch = y_true_batch.to(self.device)
             self.optimizer.zero_grad()
             y_pred_batch = self.forward(x_batch)
             loss = self.criterion(y_pred_batch, y_true_batch)
@@ -69,13 +72,13 @@ class AudioOnly(nn.Module):
             losses.append(loss.item())
         self.train_loss = np.mean(losses)
 
-    def _valid_step(self, valid_loader, device):
+    def _valid_step(self, valid_loader):
         self.eval()
         losses = []
         for x_batch, y_true_batch in valid_loader:
-            if device:
-                x_batch = x_batch.to(device)
-                y_true_batch = y_true_batch.to(device)
+            if self.device:
+                x_batch = x_batch.to(self.device)
+                y_true_batch = y_true_batch.to(self.device)
             y_pred_batch = self.forward(x_batch)
             loss = self.criterion(y_pred_batch, y_true_batch)
             losses.append(loss.item())
@@ -111,7 +114,8 @@ class AudioOnly(nn.Module):
         self.hist = {'train_loss': [], 'valid_loss': []}
         self.stopping = stopping
         self.stop = False
-        print("Train on {} samples -- validate on {} samples".format(len(train_loader), len(valid_loader)))
+        print("Train on {} samples -- validate on {} samples".format(
+            len(train_loader), len(valid_loader)))
         for epoch in range(1, epochs+1):
             self._on_epoch_begin()
             self._train_step(train_loader)
@@ -126,8 +130,7 @@ class AudioOnly(nn.Module):
                       valid_generator,
                       *,
                       epochs=1,
-                      stopping=None,
-                      device=None):
+                      stopping=None):
         self.hist = {'train_loss': [], 'valid_loss': []}
         self.stopping = stopping
         self.stop = False
@@ -135,9 +138,8 @@ class AudioOnly(nn.Module):
             len(train_generator), len(valid_generator)))
         for epoch in range(1, epochs+1):
             self._on_epoch_begin()
-            self._train_step(train_generator, device)
-            self._valid_step(valid_generator, device)
-            print('end')
+            self._train_step(train_generator)
+            self._valid_step(valid_generator)
             self._on_epoch_end(epoch)
             if self.stop:
                 break

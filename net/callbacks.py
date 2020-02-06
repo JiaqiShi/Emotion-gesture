@@ -22,7 +22,7 @@ class EarlyStopping:
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-        self.path = 'saved_model/' + name
+        self.path = 'saved_model/' + name + '.pt'
 
     def __call__(self, val_loss, model):
 
