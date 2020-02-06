@@ -15,9 +15,9 @@ BATCH_SIZE = 32
 SEED = 1234567890
 VALID_SIZE = 0.2
 
-EPOCHS = 1
+EPOCHS = 200
 LR = 1e-4
-PATIENCE = 15
+PATIENCE = 20
 
 MODEL_NAME = 'chkpt'
 
@@ -44,8 +44,8 @@ if __name__ == "__main__":
     train_set = DynamicPaddingSet(X_train, Y_train, batch_size=BATCH_SIZE)
     valid_set = DynamicPaddingSet(X_valid, Y_valid, batch_size=BATCH_SIZE)
 
-    net = AudioOnly(hidden_dim=128, input_dim=20, output_dim=30,
-                    num_stack=1, return_sequences=True, return_states=False)
+    net = AudioOnly(hidden_dim=256, input_dim=20, output_dim=30,
+                    num_stack=2, return_sequences=True, return_states=False)
     print(net)
     print("Num of parameters: ", net.count_parameters())
     net.compile(lr=LR, optimizer='adam', criterion='mse', device=device)
