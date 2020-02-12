@@ -18,7 +18,7 @@ VALID_SIZE = 0.2
 
 EPOCHS = 200
 LR = 1e-4
-PATIENCE = 20
+PATIENCE = 200
 
 MODEL_NAME = 'chkpt-emo'
 
