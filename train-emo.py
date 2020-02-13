@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from sklearn.model_selection import train_test_split
 from utils.dataprocess import shorten
-from utils.helpers import save_hist
+from utils.helpers import save_hist, one_hot
 from net.datasets import DynamicPaddingEmoSet
 from net.models import AudioEmotion
 from net.callbacks import EarlyStopping
@@ -22,10 +22,6 @@ PATIENCE = 200
 
 MODEL_NAME = 'chkpt-emo'
 
-def one_hot(num, length=11):
-    one_hot = [0] * length
-    one_hot[num] = 1
-    return np.array(one_hot)
 
 def load_data():
     audio_data, motion_data, emo_data = pickle.load(open(DATA_PATH, 'rb'))
@@ -48,11 +44,13 @@ if __name__ == "__main__":
     print("Device: ", device)
 
     X_train, e_train, Y_train, X_valid, e_valid, Y_valid = load_data()
-    train_set = DynamicPaddingEmoSet(X_train, e_train, Y_train, batch_size=BATCH_SIZE)
-    valid_set = DynamicPaddingEmoSet(X_valid, e_valid, Y_valid, batch_size=BATCH_SIZE)
+    train_set = DynamicPaddingEmoSet(
+        X_train, e_train, Y_train, batch_size=BATCH_SIZE)
+    valid_set = DynamicPaddingEmoSet(
+        X_valid, e_valid, Y_valid, batch_size=BATCH_SIZE)
 
     net = AudioEmotion(hidden_dim=128, x_input_dim=20, e_input_dim=11, output_dim=30,
-                    num_stack=2, return_sequences=True, return_states=False)
+                       num_stack=2, return_sequences=True, return_states=False)
     print(net)
     print("Num of parameters: ", net.count_parameters())
     net.compile(lr=LR, optimizer='adam', criterion='mse', device=device)

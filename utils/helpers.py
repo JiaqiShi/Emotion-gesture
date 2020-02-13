@@ -18,3 +18,9 @@ def save_hist(hist, keys, name, **kwargs):
     if 'csv' in kwargs.keys():
         df = pd.DataFrame(hist)
         df.to_csv('saved_model/hists/' + name + '_log.csv')
+
+
+def one_hot(num, length=11):
+    one_hot = [0] * length
+    one_hot[num] = 1
+    return np.array(one_hot)

@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     net = AudioOnly(hidden_dim=256, input_dim=20, output_dim=30,
                     num_stack=2, return_sequences=True, return_states=False).to(device)
-    net.load_state_dict(torch.load('saved_model/chkpt.pt'))
+    net.load_state_dict(torch.load('saved_model/' + model_name + '.pt'))
     net.eval()
 
     errors = []
